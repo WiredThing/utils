@@ -5,8 +5,3 @@ libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.1.0" withSources(),
   "com.typesafe.akka" %% "akka-actor" % "2.3.7"
 )
-
-publishTo := {
-  Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
-}
-

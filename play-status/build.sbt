@@ -8,7 +8,3 @@ libraryDependencies ++= Seq(
 
 enablePlugins(PlayScala)
 
-publishTo := {
-  Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
-}
-

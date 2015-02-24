@@ -1,4 +1,4 @@
-name := "utils"
+name := "wiredthing-utils"
 
 organization in ThisBuild := "com.wiredthing"
 
@@ -10,9 +10,9 @@ startYear in ThisBuild := Some(2014)
 
 version in ThisBuild := IO.read(file("version")).trim()
 
-lazy val utils = project in file("scala-utils")
+lazy val scalaUtils = project in file("scala-utils")
 
-lazy val playUtils = (project in file("scala-utils-play")).dependsOn(utils)
+lazy val scalaUtilsPlay = (project in file("scala-utils-play")).dependsOn(scalaUtils)
 
 lazy val status = project in file("play-status")
 
@@ -25,9 +25,11 @@ scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-language:reflec
 resolvers in ThisBuild += "WiredThing Internal Forks Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-forked-local"
 
 publishTo in ThisBuild := {
-  Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
+  if (isSnapshot.value)
+    Some("WiredThing Internal Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-local")
+  else
+    Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
 }
-
 
 credentials in ThisBuild += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
