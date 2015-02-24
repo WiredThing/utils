@@ -1,0 +1,4 @@
+
+GET     /ping                           controllers.status.StatusController.ping
+
+GET     /check_all                      controllers.status.StatusController.checkAll
