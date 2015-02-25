@@ -2,6 +2,8 @@ import NativePackagerKeys._
 
 name := "play-healthcheck"
 
+version := IO.read(baseDirectory.value / "version").trim()
+
 enablePlugins(PlayScala)
 
 libraryDependencies ++= Seq(

@@ -8,8 +8,6 @@ organizationHomepage in ThisBuild := Some(url("http://wiredthing.com"))
 
 startYear in ThisBuild := Some(2014)
 
-version in ThisBuild := IO.read(file("version")).trim()
-
 lazy val scalaUtils = project in file("scala-utils")
 
 lazy val scalaUtilsPlay = (project in file("scala-utils-play")).dependsOn(scalaUtils)
