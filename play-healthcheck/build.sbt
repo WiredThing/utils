@@ -4,6 +4,13 @@ name := "healthcheck"
 
 version := IO.read(baseDirectory.value / "version").trim()
 
+publishTo  := {
+  if (isSnapshot.value)
+    Some("WiredThing Internal Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-local")
+  else
+    Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
+}
+
 enablePlugins(PlayScala)
 
 libraryDependencies ++= Seq(
@@ -15,7 +22,7 @@ maintainer := "Doug Clinton <doug@wiredthing.com>"
 
 dockerBaseImage := "wiredthing/oraclejdk:7u72"
 
-dockerRepository := Some("dockerhost:9000/wiredthing")
+dockerRepository := Some("localhost:9000/wiredthing")
 
 dockerExposedPorts := Seq(9000)
 

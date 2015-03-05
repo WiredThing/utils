@@ -22,7 +22,7 @@ scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-language:reflec
 
 resolvers in ThisBuild += "WiredThing Internal Forks Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-forked-local"
 
-publishTo in ThisBuild := {
+publishTo  := {
   if (isSnapshot.value)
     Some("WiredThing Internal Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-local")
   else
