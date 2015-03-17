@@ -11,6 +11,11 @@ case class NoValidation[T]() extends Validates[T] {
   override def validate(a: T): Validated[T] = Success(a)
 }
 
+
+/**
+ * Some handy implementations of the Validates type-class to validate things like
+ * lists and options.
+ */
 trait DefaultValidates {
   implicit def validatesList[T: Validates]: Validates[List[T]] = new Validates[List[T]] {
     override def validate(items: List[T]): Validated[List[T]] = {
