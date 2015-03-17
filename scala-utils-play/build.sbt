@@ -10,5 +10,6 @@ publishTo  := {
 }
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play" % "2.3.8" withSources()
+  "com.typesafe.play" %% "play" % "2.3.8" withSources(),
+  "com.ning" % "async-http-client" % "1.8.15" withSources()
 )
