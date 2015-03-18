@@ -1,3 +1,4 @@
 target
 .idea
 atlassian-ide-plugin.xml
+*.log
