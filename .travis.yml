@@ -3,7 +3,3 @@ scala:
   - "2.11.6"
 jdk:
   - oraclejdk7
-  - openjdk7
-  
-script:
-  - ./activator ++$TRAVIS_SCALA_VERSION test
