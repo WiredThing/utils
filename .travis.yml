@@ -3,3 +3,5 @@ scala:
   - "2.11.6"
 jdk:
   - oraclejdk7
+notifications:
+  slack: wiredthing:QVuknyFoVkbeTNPkpjuZC1up
