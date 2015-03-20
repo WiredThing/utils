@@ -32,9 +32,9 @@ publishTo  := {
 credentials in ThisBuild += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
 libraryDependencies in ThisBuild ++= Seq(
-  "joda-time" % "joda-time" % "2.3" withSources(),
+  "joda-time" % "joda-time" % "2.3",
   "org.joda" % "joda-convert" % "1.2",
-  "org.scalaz" %% "scalaz-core" % "7.1.0" withSources(),
+  "org.scalaz" %% "scalaz-core" % "7.1.0",
   "org.scalatest" %% "scalatest" % "2.1.7" % "test"
 )
 
