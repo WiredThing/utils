@@ -24,6 +24,6 @@ dockerBaseImage := "wiredthing/oraclejdk:7u72"
 
 dockerRepository := Some("localhost:9000/wiredthing")
 
-dockerExposedPorts := Seq(9000)
+dockerExposedPorts := Seq(9200)
 
 dockerUpdateLatest := true
