@@ -1,14 +1,15 @@
 package com.wiredthing.utils.base64
 
 import scala.collection.immutable.HashMap
+import scala.util.Try
 
 /**
  * Base64 encoder
  * @author Mark Lister
- * This software is distributed under the 2-Clause BSD license. See the
- * BSD_LICENSE file in the root of the repository.
+ *         This software is distributed under the 2-Clause BSD license. See the
+ *         BSD_LICENSE file in the root of the repository.
  *
- * Copyright (c) 2014 - 2015 Mark Lister
+ *         Copyright (c) 2014 - 2015 Mark Lister
  *
  *         The repo for this Base64 encoder lives at  https://github.com/marklister/base64
  *         Please send your issues, suggestions and pull requests there.
@@ -17,6 +18,7 @@ import scala.collection.immutable.HashMap
 
 object Base64 {
   private[this] val zero = Array(0, 0).map(_.toByte)
+
   class B64Scheme(val encodeTable: IndexedSeq[Char]) {
     lazy val decodeTable = HashMap(encodeTable.zipWithIndex: _ *)
   }
@@ -33,7 +35,7 @@ object Base64 {
         val a = (x(0) & 0xfc) >> 2
         val b = ((x(0) & 0x3) << 4) | ((x(1) & 0xf0) >> 4)
         val c = ((x(1) & 0xf) << 2) | ((x(2) & 0xc0) >> 6)
-        val d = (x(2)) & 0x3f
+        val d = x(2) & 0x3f
         Array(a, b, c, d)
       }
       ((b ++ zero.take(pad)).grouped(3)
@@ -49,20 +51,20 @@ object Base64 {
     lazy val cleanS = s.reverse.dropWhile(_ == '=').reverse
     lazy val pad = s.length - cleanS.length
 
-    def toByteArray(implicit scheme: B64Scheme = base64): Array[Byte] = {
+    def toByteArray(implicit scheme: B64Scheme = base64): Try[Array[Byte]] = {
       def threeBytes(s: String): Array[Byte] = {
         val r = s.map(scheme.decodeTable(_)).foldLeft(0)((a, b) => (a << 6) | b)
         Array((r >> 16).toByte, (r >> 8).toByte, r.toByte)
       }
       if (pad > 2 || s.length % 4 != 0) throw new java.lang.IllegalArgumentException("Invalid Base64 String:" + s)
-      try {
+      Try {
         (cleanS + "A" * pad)
           .grouped(4)
           .map(threeBytes)
           .flatten
           .toArray
           .dropRight(pad)
-      } catch {case e:NoSuchElementException => throw new java.lang.IllegalArgumentException("Invalid Base64 String:" + s) }
+      } recover { case e: NoSuchElementException => throw new java.lang.IllegalArgumentException("Invalid Base64 String:" + s) }
     }
   }
 
