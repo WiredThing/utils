@@ -25,14 +25,24 @@ trait ControllerValidation extends DefaultValidates {
   self: Controller =>
   def withValidation[A: Validates : Reads, B: Writes](json: JsValue)(body: A => Future[B])(implicit ec: ExecutionContext): Future[Result] = {
     json.validate[A] match {
-      case JsSuccess(r, _) => implicitly[Validates[A]].validate(r) match {
-        case v@Success(a) => body(a).map(r => Ok(Json.toJson(r)))
-        case Failure(errs) => Future(BadRequest(Json.toJson(errs.toList)))
-      }
+      case JsSuccess(a, _) => withValidation(a)(body).map(resultFor(_))
+
       case JsError(errors) => Future {
-        val errStrings = errors.map { case (path, errs) => errs.map(ve => s"$path: $ve")}
+        val errStrings = errors.map { case (path, errs) => errs.map(ve => s"$path: $ve") }
         BadRequest(Json.toJson(errStrings))
       }
+    }
+  }
+
+  def resultFor[T: Writes](v: ValidationNel[String, T]): Result = v match {
+    case Success(b) => Ok(Json.toJson(b))
+    case Failure(errs) => BadRequest(Json.toJson(errs.toList))
+  }
+
+  def withValidation[A: Validates, B: Writes](a: A)(body: A => Future[B])(implicit ec: ExecutionContext): Future[ValidationNel[String, B]] = {
+    implicitly[Validates[A]].validate(a) match {
+      case v@Success(a) => body(a).map(Success(_))
+      case Failure(errs) => Future(Failure(errs))
     }
   }
 }
