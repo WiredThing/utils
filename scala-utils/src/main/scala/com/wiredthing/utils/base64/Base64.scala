@@ -51,13 +51,15 @@ object Base64 {
     lazy val cleanS = s.reverse.dropWhile(_ == '=').reverse
     lazy val pad = s.length - cleanS.length
 
+    def fromBase64(implicit scheme: B64Scheme = base64): Option[String] = toByteArray.toOption.map(new String(_))
+
     def toByteArray(implicit scheme: B64Scheme = base64): Try[Array[Byte]] = {
       def threeBytes(s: String): Array[Byte] = {
         val r = s.map(scheme.decodeTable(_)).foldLeft(0)((a, b) => (a << 6) | b)
         Array((r >> 16).toByte, (r >> 8).toByte, r.toByte)
       }
-      if (pad > 2 || s.length % 4 != 0) throw new java.lang.IllegalArgumentException("Invalid Base64 String:" + s)
       Try {
+        if (pad > 2 || s.length % 4 != 0) throw new java.lang.IllegalArgumentException("Invalid Base64 String:" + s)
         (cleanS + "A" * pad)
           .grouped(4)
           .map(threeBytes)
