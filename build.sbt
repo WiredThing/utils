@@ -8,13 +8,13 @@ organizationHomepage in ThisBuild := Some(url("http://wiredthing.com"))
 
 startYear in ThisBuild := Some(2014)
 
-lazy val scalaUtils = project in file("scala-utils")
+lazy val scalaUtils = Project("scala-utils", file("scala-utils"))
 
-lazy val scalaUtilsPlay = (project in file("scala-utils-play")).dependsOn(scalaUtils)
+lazy val scalaUtilsPlay = Project("scala-utils-play", file("scala-utils-play")).dependsOn(scalaUtils)
 
-lazy val status = project in file("play-status")
+lazy val status = Project("play-status", file("play-status"))
 
-lazy val healthcheck = (project in file("play-healthcheck")).dependsOn(status)
+lazy val healthcheck = Project("play-healthcheck", file("play-healthcheck")).dependsOn(status)
 
 scalaVersion in ThisBuild := "2.11.5"
 
@@ -22,7 +22,7 @@ scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-language:reflec
 
 resolvers in ThisBuild += "WiredThing Internal Forks Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-forked-local"
 
-publishTo  := {
+publishTo := {
   if (isSnapshot.value)
     Some("WiredThing Internal Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-local")
   else
@@ -38,4 +38,4 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scalatest" %% "scalatest" % "2.1.7" % "test"
 )
 
-shellPrompt in ThisBuild := { state: State => "utils " + Project.extract(state).currentRef.project + "> "}
+shellPrompt in ThisBuild := { state: State => "utils " + Project.extract(state).currentRef.project + "> " }
