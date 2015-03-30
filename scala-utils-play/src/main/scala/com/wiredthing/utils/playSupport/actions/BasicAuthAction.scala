@@ -13,12 +13,14 @@ import scalaz.{-\/, \/, \/-}
 case class BasicAuth(username: NonBlankString, password: Option[NonBlankString]) {
   def encodeBase64: String = {
     val s = password match {
-      case Some(pwd) => s"Basic $username:$pwd"
-      case None => s"Basic $username:"
+      case Some(pwd) => s"$username:$pwd"
+      case None => s"$username:"
     }
 
     s.getBytes.toBase64
   }
+
+  def headerValue: String = s"Basic $encodeBase64"
 }
 
 class BasicAuthRequest[A](val auth: BasicAuth, request: Request[A]) extends WrappedRequest[A](request)
@@ -28,8 +30,8 @@ object BasicAuthAction
   with ActionRefiner[Request, BasicAuthRequest]
   with BasicAuthExtraction {
   override protected def refine[A](request: Request[A]): Future[Either[Result, BasicAuthRequest[A]]] = Future.successful {
-    extractToken(request) match {
-      case \/-(auth) => Right(new BasicAuthRequest(auth, request))
+    extractBasicAuth(request) match {
+      case \/-(auth) => Logger.debug(s"extracted basic auth $auth"); Right(new BasicAuthRequest(auth, request))
       case -\/(e) => Logger.debug(s"Failed basic auth: '$e'"); Left(Unauthorized)
     }
   }
@@ -40,7 +42,7 @@ trait BasicAuthExtraction {
 
   def extractBase64Auth(auth: String): \/[String, String] = auth match {
     case Pattern(s) => \/-(s)
-    case _ => -\/("Auth string is malformed")
+    case _ => -\/(s"Auth string is malformed: '$auth'")
   }
 
   def decodeBase64(base64: String): \/[String, String] =
@@ -68,7 +70,7 @@ trait BasicAuthExtraction {
     auth <- extractBasicAuth(decoded)
   } yield auth
 
-  def extractToken(request: Request[_]): \/[String, BasicAuth] =
+  def extractBasicAuth(request: Request[_]): \/[String, BasicAuth] =
     request.headers.get("Authorization")
       .map(decodeBasicAuth)
       .getOrElse(-\/("No Authorization header found in request"))
