@@ -3,6 +3,7 @@ package com.wiredthing.utils.playSupport.actions
 import com.wiredthing.utils.NonBlankString
 import com.wiredthing.utils.NonBlankString._
 import com.wiredthing.utils.base64.Base64._
+import com.wiredthing.utils.http.BasicAuth
 import play.api.Logger
 import play.api.mvc.Results._
 import play.api.mvc._
@@ -10,18 +11,7 @@ import play.api.mvc._
 import scala.concurrent.Future
 import scalaz.{-\/, \/, \/-}
 
-case class BasicAuth(username: NonBlankString, password: Option[NonBlankString]) {
-  def encodeBase64: String = {
-    val s = password match {
-      case Some(pwd) => s"$username:$pwd"
-      case None => s"$username:"
-    }
 
-    s.getBytes.toBase64
-  }
-
-  def headerValue: String = s"Basic $encodeBase64"
-}
 
 class BasicAuthRequest[A](val auth: BasicAuth, request: Request[A]) extends WrappedRequest[A](request)
 
