@@ -19,7 +19,7 @@ object LoggingFilter extends Filter {
 
     val result = next(rh)
 
-    if (needsLogging(rh)) logString(rh, result, startTime, DateTime.now.withZone(DateTimeZone.UTC).getMillis).map(Logger.info)
+    if (needsLogging(rh)) logString(rh, result, startTime, DateTime.now.withZone(DateTimeZone.UTC).getMillis).map(Logger.info(_))
 
     result
   }
