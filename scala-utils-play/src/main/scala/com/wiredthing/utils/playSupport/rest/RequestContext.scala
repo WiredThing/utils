@@ -34,7 +34,9 @@ case class RequestChain(value: String) extends AnyVal {
 }
 
 object RequestChain {
-  def newComponent = (Random.nextInt & 0xffff).toHexString
+  def format(i: Int) = f"$i%04x"
+
+  def newComponent: String = format(Random.nextInt & 0xffff)
 
   def init = RequestChain(newComponent)
 }
