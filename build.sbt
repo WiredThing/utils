@@ -10,7 +10,7 @@ startYear in ThisBuild := Some(2014)
 
 lazy val scalaUtils = Project("scala-utils", file("scala-utils"))
 
-lazy val scalaUtilsPlay = Project("scala-utils-play", file("scala-utils-play")).dependsOn(scalaUtils)
+lazy val scalaUtilsPlay = Project("scala-utils-play", file("scala-utils-play")).dependsOn(scalaUtils).aggregate(scalaUtils)
 
 lazy val status = Project("play-status", file("play-status"))
 

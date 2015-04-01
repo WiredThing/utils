@@ -11,20 +11,23 @@ import play.api.mvc._
 import scala.concurrent.Future
 import scalaz.{-\/, \/, \/-}
 
-
-
-class BasicAuthRequest[A](val auth: BasicAuth, request: Request[A]) extends WrappedRequest[A](request)
+class BasicAuthRequest[A](val basicAuth: BasicAuth, request: SessionRequest[A]) extends SessionRequest[A](request.context, request)
 
 object BasicAuthAction
   extends ActionBuilder[BasicAuthRequest]
-  with ActionRefiner[Request, BasicAuthRequest]
   with BasicAuthExtraction {
-  override protected def refine[A](request: Request[A]): Future[Either[Result, BasicAuthRequest[A]]] = Future.successful {
-    extractBasicAuth(request) match {
-      case \/-(auth) => Logger.debug(s"extracted basic auth $auth"); Right(new BasicAuthRequest(auth, request))
-      case -\/(e) => Logger.debug(s"Failed basic auth: '$e'"); Left(Unauthorized)
+
+  val refiner = new ActionRefiner[SessionRequest, BasicAuthRequest] {
+    override protected def refine[A](request: SessionRequest[A]): Future[Either[Result, BasicAuthRequest[A]]] = Future.successful {
+      extractBasicAuth(request) match {
+        case \/-(auth) => Right(new BasicAuthRequest(auth, request))
+        case -\/(e) => Logger.warn(s"Failed basic auth: '$e'"); Left(Unauthorized)
+      }
     }
   }
+
+  override def invokeBlock[A](request: Request[A], block: (BasicAuthRequest[A]) => Future[Result]): Future[Result] =
+    (SessionAction andThen refiner).invokeBlock(request, block)
 }
 
 trait BasicAuthExtraction {

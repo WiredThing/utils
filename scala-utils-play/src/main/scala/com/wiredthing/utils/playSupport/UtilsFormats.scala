@@ -1,13 +1,13 @@
 package com.wiredthing.utils.playSupport
 
-import com.wiredthing.utils.{PhoneNumber, NonBlankString}
 import com.wiredthing.utils.NonBlankString._
+import com.wiredthing.utils.{NonBlankString, PhoneNumber}
 import play.api.libs.json._
 
 import scalaz.Scalaz._
 import scalaz._
 
-trait Formats {
+trait UtilsFormats {
   implicit val nonBlankStringFormat = new Format[NonBlankString] {
     override def reads(json: JsValue): JsResult[NonBlankString] = json match {
       case JsString(s) => s.toNbs.map(JsSuccess(_)).getOrElse(JsError(s"Expected non-empty string"))
@@ -17,7 +17,7 @@ trait Formats {
     override def writes(nes: NonBlankString): JsValue = JsString(nes.s)
   }
 
-  implicit def nonEmptyListFormat[T: Reads : Writes] = new Format[NonEmptyList[T]] {
+  implicit def nonEmptyListFormat[T: Reads : Writes]: Format[NonEmptyList[T]] = new Format[NonEmptyList[T]] {
     override def reads(json: JsValue): JsResult[NonEmptyList[T]] = {
       val list = Json.fromJson[List[T]](json)
       list match {
