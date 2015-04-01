@@ -19,8 +19,7 @@ trait UtilsFormats {
 
   implicit def nonEmptyListFormat[T: Reads : Writes]: Format[NonEmptyList[T]] = new Format[NonEmptyList[T]] {
     override def reads(json: JsValue): JsResult[NonEmptyList[T]] = {
-      val list = Json.fromJson[List[T]](json)
-      list match {
+      Json.fromJson[List[T]](json) match {
         case e: JsError => e
         case JsSuccess(l, p) =>
           l.toNel.map(JsSuccess(_)).getOrElse(JsError("Expected non-empty list"))

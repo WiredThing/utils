@@ -24,7 +24,7 @@ trait JsonErrorHandling {
         case e: Upstream4xxResponse => (e.reportAs, e.getMessage)
         case e: Upstream5xxResponse => (e.reportAs, e.getMessage)
 
-        case e: Throwable => (INTERNAL_SERVER_ERROR, e.getMessage)
+        case e => (INTERNAL_SERVER_ERROR, e.getMessage)
       }
 
       new Status(code)(Json.toJson(ErrorResponse(code, message)))
