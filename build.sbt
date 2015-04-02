@@ -16,7 +16,7 @@ lazy val status = Project("play-status", file("play-status"))
 
 lazy val healthcheck = Project("play-healthcheck", file("play-healthcheck")).dependsOn(status)
 
-scalaVersion in ThisBuild := "2.11.5"
+scalaVersion in ThisBuild := "2.11.6"
 
 scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-language:reflectiveCalls", "-language:postfixOps")
 
