@@ -1,8 +1,16 @@
 language: scala
+
 scala:
 - 2.11.6
+
 jdk:
 - oraclejdk7
+
 notifications:
   slack:
     secure: ddWr5SfQnESBMmY5B7adoiByvybbM3VwPsx5pX90oGrfI5Ttm2Mdkgva+9U+H7R3WHUBZpTwzFtCngxJA00xQlqOz2gBP13aegKcC9AJ+xEXLOKm/rUtm+ajcW5ZcARYI5QRQv/VJw5CwOwrtxYBfE9eLN4x9rZ+xwfmEaM1/60=
+
+branches:
+  only:
+  - master
+  - dev
