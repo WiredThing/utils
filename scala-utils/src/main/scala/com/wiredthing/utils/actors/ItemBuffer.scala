@@ -1,14 +1,13 @@
 package com.wiredthing.utils.actors
 
+import akka.actor.{Actor, ActorRef, Props}
+import akka.pattern.ask
+import akka.util.Timeout
 import com.wiredthing.utils.AppLogging
 
-import scala.language.postfixOps
-import scala.concurrent.{Future, Await}
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import akka.actor.{Actor, ActorRef, Props}
-import akka.util.Timeout
-import akka.pattern.ask
-
+import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
 class ItemBuffer[T](name: String, drain: ActorRef, maxItemsToBuffer: Int = 50, maxTimeToBuffer: FiniteDuration)(implicit mf: Manifest[T]) extends Actor with AppLogging {
@@ -51,7 +50,10 @@ class ItemBuffer[T](name: String, drain: ActorRef, maxItemsToBuffer: Int = 50, m
 
       f.onComplete {
         case Success(_) => bufferedRows = List()
-        case Failure(t) => logger.error("Got error from drain", t)
+        case Failure(t) =>
+          logger.error("Got error from drain", t)
+          // Reset the timer to avoid spinning too quickly
+          firstReceiveTime = System.currentTimeMillis()
       }
 
       Await.ready(f, 20 seconds)

@@ -15,11 +15,11 @@ object LoggingFilter extends Filter {
   private val dateFormat = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSSZZ")
 
   def apply(next: (RequestHeader) => Future[Result])(rh: RequestHeader): Future[Result] = {
-    val startTime = DateTime.now.withZone(DateTimeZone.UTC).getMillis
+    val startTime = System.currentTimeMillis()
 
     val result = next(rh)
 
-    if (needsLogging(rh)) logString(rh, result, startTime, DateTime.now.withZone(DateTimeZone.UTC).getMillis).map(Logger.info(_))
+    if (needsLogging(rh)) logString(rh, result, startTime).map(Logger.info(_))
 
     result
   }
@@ -33,15 +33,17 @@ object LoggingFilter extends Filter {
   //    } yield ControllerConfig.paramsForController(name).needsLogging).getOrElse(true)
   //  }
 
-  def logString(rh: RequestHeader, result: Future[Result], startTime: Long, endTime: Long): Future[String] = {
+  def logString(rh: RequestHeader, result: Future[Result], startTime: Long): Future[String] = {
     val rc = RequestContext.fromHeaders(rh.headers)
     val start = dateFormat.format(new Date(startTime))
-    val elapsedTime = endTime - startTime
 
     result.map {
-      result => s"${rc.requestChain.value} $start ${rh.method} ${rh.uri} ${result.header.status} ${elapsedTime}ms"
+      val elapsedTime = System.currentTimeMillis() - startTime
+      result => s"${rc.sessionId.id} ${rc.requestChain.value} $start ${rh.method} ${rh.uri} ${result.header.status} ${elapsedTime}ms"
     }.recover {
-      case t => s"${rc.requestChain.value} $start ${rh.method} ${rh.uri} $t ${elapsedTime}ms"
+      case t =>
+        val elapsedTime = DateTime.now.withZone(DateTimeZone.UTC).getMillis - startTime
+        s"${rc.sessionId.id} ${rc.requestChain.value} ${rh.method} ${rh.uri} $t ${elapsedTime}ms"
     }
   }
 }
