@@ -3,11 +3,13 @@ package com.wiredthing.utils.actors
 import com.wiredthing.utils.AppLogging
 
 import scala.language.postfixOps
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 import akka.actor.{Actor, ActorRef, Props}
 import akka.util.Timeout
 import akka.pattern.ask
+
+import scala.util.{Failure, Success, Try}
 
 class ItemBuffer[T](name: String, drain: ActorRef, maxItemsToBuffer: Int = 50, maxTimeToBuffer: FiniteDuration)(implicit mf: Manifest[T]) extends Actor with AppLogging {
   private implicit val ec = context.dispatcher
@@ -35,7 +37,9 @@ class ItemBuffer[T](name: String, drain: ActorRef, maxItemsToBuffer: Int = 50, m
     bufferedRows = item +: bufferedRows
   }
 
-  private def maybeFlush(): Unit = if (bufferFull || timedOut) flush()
+  private def maybeFlush(): Unit = if (bufferFull || timedOut) Try(flush()).recover {
+    case t => logger.warn("Error during flush", t)
+  }
 
   private def bufferFull: Boolean = bufferedRows.length >= maxItemsToBuffer
 
@@ -43,8 +47,14 @@ class ItemBuffer[T](name: String, drain: ActorRef, maxItemsToBuffer: Int = 50, m
 
   private def flush(): Unit = {
     if (!bufferedRows.isEmpty) {
-      Await.ready(drain ? bufferedRows, 20 seconds)
-      bufferedRows = List()
+      val f = drain ? bufferedRows
+
+      f.onComplete {
+        case Success(_) => bufferedRows = List()
+        case Failure(t) => logger.error("Got error from drain", t)
+      }
+
+      Await.ready(f, 20 seconds)
     }
   }
 }
