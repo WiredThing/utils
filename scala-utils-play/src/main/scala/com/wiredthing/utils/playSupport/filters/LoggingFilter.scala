@@ -37,9 +37,9 @@ object LoggingFilter extends Filter {
     val rc = RequestContext.fromHeaders(rh.headers)
     val start = dateFormat.format(new Date(startTime))
 
-    result.map {
+    result.map { result =>
       val elapsedTime = System.currentTimeMillis() - startTime
-      result => s"${rc.sessionId.id} ${rc.requestChain.value} $start ${rh.method} ${rh.uri} ${result.header.status} ${elapsedTime}ms"
+      s"${rc.sessionId.id} ${rc.requestChain.value} $start ${rh.method} ${rh.uri} ${result.header.status} ${elapsedTime}ms"
     }.recover {
       case t =>
         val elapsedTime = DateTime.now.withZone(DateTimeZone.UTC).getMillis - startTime
