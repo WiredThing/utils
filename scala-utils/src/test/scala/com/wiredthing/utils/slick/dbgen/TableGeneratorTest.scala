@@ -45,9 +45,9 @@ class TableGeneratorTest extends FlatSpec with Matchers {
   "generatColumnDefs" should "give right options for BigDecimal" in {
     val gen = new TableGenerator(TableRow[BigDecimalTestRow])
 
-    gen.generateColumnDefs("n", "BigDecimal")(0) shouldBe """def n = column[BigDecimal]("n", O.DBType("decimal(9, 2)"))"""
+    gen.generateColumnDefs("n", "BigDecimal")(0) shouldBe """def n = column[BigDecimal]("n", O.SqlType("decimal(9, 2)"))"""
 
-    gen.generateColumnDefs("on", "Option[BigDecimal]")(0) shouldBe """def on = column[Option[BigDecimal]]("on", O.DBType("decimal(9, 2)"))"""
+    gen.generateColumnDefs("on", "Option[BigDecimal]")(0) shouldBe """def on = column[Option[BigDecimal]]("on", O.SqlType("decimal(9, 2)"))"""
 
   }
 }

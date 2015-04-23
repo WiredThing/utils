@@ -67,7 +67,7 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
       else if (isStringType(t)) ", O.Length(255)"
       else ""
 
-    val numOpt = if (t == "BigDecimal" || t == "Option[BigDecimal]") """, O.DBType("decimal(9, 2)")""" else ""
+    val numOpt = if (t == "BigDecimal" || t == "Option[BigDecimal]") """, O.SqlType("decimal(9, 2)")""" else ""
 
     val col = s"""def $n = column[$t]("${columnSQLName(n)}"$pkOpt$lengthOpt$numOpt)"""
 
