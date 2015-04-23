@@ -23,14 +23,7 @@ trait TableGen {
   def genTable(): Seq[String]
 }
 
-class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: TableRow[T])(implicit
-                                                                                         lgen: LabelledGeneric.Aux[T, R],
-                                                                                         keys: Keys.Aux[R, KO],
-                                                                                         values: Values.Aux[R, VO],
-                                                                                         fold: FoldTypes[VO],
-                                                                                         travK: ToTraversable.Aux[KO, List, KLub]) extends TableGen {
-
-
+object TableGenerator {
   implicit def idTypeTypeable[T](implicit tt: Typeable[T]) = new Typeable[IdType[T]] {
     override def cast(t: Any): Option[IdType[T]] =
       if (t.isInstanceOf[IdType[_]]) Some(t.asInstanceOf[IdType[T]]) else None
@@ -41,8 +34,17 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
       else s"IdType[${tt.describe}]"
     }
   }
+}
 
-  lazy val namesAndTypes: List[(String, Typeable[_])] = {
+class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: TableRow[T])(implicit
+                                                                                         lgen: LabelledGeneric.Aux[T, R],
+                                                                                         keys: Keys.Aux[R, KO],
+                                                                                         values: Values.Aux[R, VO],
+                                                                                         fold: FoldTypes[VO],
+                                                                                         travK: ToTraversable.Aux[KO, List, KLub]) extends TableGen {
+
+
+  lazy val namesAndTypes: List[(String, String)] = {
     val names = keys().toList.asInstanceOf[List[Symbol]].map(_.name)
     val types = fold()
     names.zip(types)
@@ -53,27 +55,37 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
     case _ => false
   }
 
+  def columnSQLName(n: String) = row.decamelise(n).toLowerCase
+
+  def stripFromEnd(s: String, count: Int) = s.substring(0, s.length - count)
+
+  def generateColumnDefs(n: String, t: String): Seq[String] = {
+    val pkOpt = if (n == "id") ", O.PrimaryKey" else ""
+
+    val lengthOpt =
+      if (n == "id" || n.endsWith("Id")) ", O.Length(IdType.length)"
+      else if (isStringType(t)) ", O.Length(255)"
+      else ""
+
+    val col = s"""def $n = column[$t]("${columnSQLName(n)}"$pkOpt$lengthOpt)"""
+
+    if (n.endsWith("Id")) {
+      val indexRoot = stripFromEnd(columnSQLName(n), 3)
+      val fkSQLName = s"${row.root.toLowerCase}_${indexRoot.toLowerCase}_fk"
+      val idxSQLName = s"${row.root.toLowerCase}_${indexRoot.toLowerCase}_idx"
+      val idStripped = stripFromEnd(n, 2)
+      val identifierRoot = lowerCaseFirst(idStripped)
+      val fk = s"""def $indexRoot = foreignKey("$fkSQLName", $n, ${identifierRoot + "Table"})(_.id, onDelete = ForeignKeyAction.Cascade)"""
+      val index = s"""def ${identifierRoot}Index = index("$idxSQLName", $n)"""
+      Seq(col, fk, index)
+    } else Seq(col)
+  }
+
+  def lowerCaseFirst(s: String): String = s.substring(0, 1).toLowerCase + s.substring(1)
+
   lazy val genTable: Seq[String] = {
     val colDefs = namesAndTypes.flatMap { case (n, t) =>
-      val colName = row.decamelise(n).toLowerCase
-
-      val pkOpt = if (n == "id") ", O.PrimaryKey" else ""
-
-      val lengthOpt =
-        if (n == "id" || n.endsWith("Id")) ", O.Length(36)"
-        else if (isStringType(t.describe)) ", O.Length(255)"
-        else ""
-
-      val col = s"""def $n = column[$t]("$colName"$pkOpt$lengthOpt)"""
-
-      if (n.endsWith("Id")) {
-        val indexRoot = colName.substring(0, n.length - 2)
-        val fkName = s"${row.root.toLowerCase}_${indexRoot.toLowerCase}_fk"
-        val idxName = s"${row.root.toLowerCase}_${indexRoot.toLowerCase}_idx"
-        val fk = s"""def $indexRoot = foreignKey("$fkName", $n, ${indexRoot}Table)(_.id, onDelete = ForeignKeyAction.Cascade)"""
-        val index = s"""def ${indexRoot}Index = index("$idxName", $n)"""
-        Seq(col, fk, index)
-      } else Seq(col)
+      generateColumnDefs(n, t)
     }
 
     val knownTypes = Seq("String", "Long", "Boolean", "Int", "Short", "NonBlankString", "PhoneNumber")
@@ -90,15 +102,15 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
     * TODO: Only create type mappers for classes with a single member
     * TODO: Use type information to extract the name of the member
      */
-    def typeMapper(ty: Typeable[_]) = {
-      val t = ty.describe.replace("Option[", "").replace("]", "")
+    def typeMapper(ty: String) = {
+      val t = ty.replace("Option[", "").replace("]", "")
       val s = row.decamelise(t).toLowerCase
       val memberNameIndex = s.lastIndexOf("_")
       val memberName = s.substring(memberNameIndex + 1)
       s"implicit def ${t}Mapper: BaseColumnType[$t] = MappedColumnType.base[$t, String](_.$memberName, $t)"
     }
 
-    val typeMappers = namesAndTypes.map(_._2).filter(ty => needsTypeMapper(ty.describe)).map(typeMapper)
+    val typeMappers = namesAndTypes.map(_._2).filter(t => needsTypeMapper(t)).map(typeMapper)
 
     val starDef = s"def * = (${namesAndTypes.map(_._1).mkString(", ")}) <> (${row.name}.tupled, ${row.name}.unapply)"
 
@@ -106,11 +118,12 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
       Seq(typeMappers: _*),
       Seq(queryAlias(row), row.classDef + " {"),
       Seq(colDefs.map(d => "    " + d): _*),
-      Seq("    " + starDef, "}", tableVal(row))
+      Seq("    " + starDef, "}", tableVal)
     ).flatten
   }
 
-  def tableVal[T](decl: TableRow[T]) = s"lazy val ${decl.root.toLowerCase}Table = TableQuery[${decl.tableClassName}]"
+
+  lazy val tableVal = s"lazy val ${lowerCaseFirst(row.root)}Table = TableQuery[${row.tableClassName}]"
 
   def queryAlias[T](decl: TableRow[T]) = {
     //type NotificationQuery = Query[NotificationTable, NotificationRow, Seq]
