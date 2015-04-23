@@ -1,6 +1,7 @@
 package com.wiredthing.utils.playSupport
 
 import com.wiredthing.utils.NonBlankString._
+import com.wiredthing.utils.slick.IdType
 import com.wiredthing.utils.{NonBlankString, PhoneNumber}
 import play.api.libs.json._
 
@@ -36,5 +37,11 @@ trait UtilsFormats {
     }
 
     override def writes(p: PhoneNumber): JsValue = JsString(p.s)
+  }
+
+  implicit def idFormat[T] = new Format[IdType[T]] {
+    override def reads(json: JsValue): JsResult[IdType[T]] = json.validate[NonBlankString].map(IdType[T](_))
+
+    override def writes(o: IdType[T]): JsValue = JsString(o.id.s)
   }
 }

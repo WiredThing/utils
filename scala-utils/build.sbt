@@ -9,8 +9,10 @@ publishTo  := {
     Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
 }
 
+resolvers in ThisBuild += Resolver.sonatypeRepo("snapshots")
+
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.2",
-  "com.chuusai" %% "shapeless" % "2.1.0",
+  "com.chuusai" %% "shapeless" % "2.2.0-SNAPSHOT",
   "com.typesafe.akka" %% "akka-actor" % "2.3.7"
 )
