@@ -4,8 +4,7 @@ import com.wiredthing.utils.slick.IdType
 import org.scalatest.{FlatSpec, Matchers}
 import shapeless.Typeable
 
-class TableGeneratorTest extends FlatSpec with Matchers {
-
+object TableGeneratorTestData {
   type TestId = IdType[TestRow]
   type AnotherTestId = IdType[AnotherTestRow]
 
@@ -13,13 +12,22 @@ class TableGeneratorTest extends FlatSpec with Matchers {
 
   case class AnotherTestRow(counter: Int, id: AnotherTestId)
 
+  case class BigDecimalTestRow(n: BigDecimal, on: Option[BigDecimal])
+
+}
+
+class TableGeneratorTest extends FlatSpec with Matchers {
+
+  import TableGeneratorTestData._
+
+
   implicit def idTypeTypeable[T](implicit tt: Typeable[T]) = TableGenerator.idTypeTypeable
 
   "generateColumnDefs" should "give a column, fk and index" in {
     val gen = new TableGenerator(TableRow[TestRow])
 
     val expectedColDef = """def anotherTestId = column[AnotherTestId]("another_test_id", O.Length(IdType.length))"""
-    val expectedFkDef = """def another_test = foreignKey("test_another_test_fk", anotherTestId, anotherTestTable)(_.id, onDelete = ForeignKeyAction.Cascade)"""
+    val expectedFkDef = """def anotherTest = foreignKey("test_another_test_fk", anotherTestId, anotherTestTable)(_.id, onDelete = ForeignKeyAction.Cascade)"""
     val expectedIdxDef = """def anotherTestIndex = index("test_another_test_idx", anotherTestId)"""
 
     val lines = gen.generateColumnDefs("anotherTestId", "AnotherTestId")
@@ -32,5 +40,14 @@ class TableGeneratorTest extends FlatSpec with Matchers {
     val gen = new TableGenerator(TableRow[AnotherTestRow])
 
     gen.tableVal shouldBe "lazy val anotherTestTable = TableQuery[AnotherTestTable]"
+  }
+
+  "generatColumnDefs" should "give right options for BigDecimal" in {
+    val gen = new TableGenerator(TableRow[BigDecimalTestRow])
+
+    gen.generateColumnDefs("n", "BigDecimal")(0) shouldBe """def n = column[BigDecimal]("n", O.DBType("decimal(9, 2)"))"""
+
+    gen.generateColumnDefs("on", "Option[BigDecimal]")(0) shouldBe """def on = column[Option[BigDecimal]]("on", O.DBType("decimal(9, 2)"))"""
+
   }
 }

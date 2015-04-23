@@ -67,7 +67,9 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
       else if (isStringType(t)) ", O.Length(255)"
       else ""
 
-    val col = s"""def $n = column[$t]("${columnSQLName(n)}"$pkOpt$lengthOpt)"""
+    val numOpt = if (t == "BigDecimal" || t == "Option[BigDecimal]") """, O.DBType("decimal(9, 2)")""" else ""
+
+    val col = s"""def $n = column[$t]("${columnSQLName(n)}"$pkOpt$lengthOpt$numOpt)"""
 
     if (n.endsWith("Id")) {
       val indexRoot = stripFromEnd(columnSQLName(n), 3)
@@ -75,7 +77,7 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
       val idxSQLName = s"${row.root.toLowerCase}_${indexRoot.toLowerCase}_idx"
       val idStripped = stripFromEnd(n, 2)
       val identifierRoot = lowerCaseFirst(idStripped)
-      val fk = s"""def $indexRoot = foreignKey("$fkSQLName", $n, ${identifierRoot + "Table"})(_.id, onDelete = ForeignKeyAction.Cascade)"""
+      val fk = s"""def $identifierRoot = foreignKey("$fkSQLName", $n, ${identifierRoot + "Table"})(_.id, onDelete = ForeignKeyAction.Cascade)"""
       val index = s"""def ${identifierRoot}Index = index("$idxSQLName", $n)"""
       Seq(col, fk, index)
     } else Seq(col)
@@ -88,7 +90,7 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
       generateColumnDefs(n, t)
     }
 
-    val knownTypes = Seq("String", "Long", "Boolean", "Int", "Short", "NonBlankString", "PhoneNumber")
+    val knownTypes = Seq("BigDecimal", "String", "Long", "Boolean", "Int", "Short", "NonBlankString", "PhoneNumber")
 
     def isOptionOfKnownType(t: String): Boolean = t.startsWith("Option[") && !needsTypeMapper(t.substring(7, t.length - 1))
 
