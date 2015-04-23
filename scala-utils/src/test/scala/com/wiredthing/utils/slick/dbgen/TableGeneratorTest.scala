@@ -30,7 +30,7 @@ class TableGeneratorTest extends FlatSpec with Matchers {
     val expectedFkDef = """def anotherTest = foreignKey("test_another_test_fk", anotherTestId, anotherTestTable)(_.id, onDelete = ForeignKeyAction.Cascade)"""
     val expectedIdxDef = """def anotherTestIndex = index("test_another_test_idx", anotherTestId)"""
 
-    val lines = gen.generateColumnDefs("anotherTestId", "AnotherTestId")
+    val lines = gen.generateDefsForColumn("anotherTestId", "AnotherTestId")
     lines(0) shouldBe expectedColDef
     lines(1) shouldBe expectedFkDef
     lines(2) shouldBe expectedIdxDef
@@ -45,9 +45,9 @@ class TableGeneratorTest extends FlatSpec with Matchers {
   "generatColumnDefs" should "give right options for BigDecimal" in {
     val gen = new TableGenerator(TableRow[BigDecimalTestRow])
 
-    gen.generateColumnDefs("n", "BigDecimal")(0) shouldBe """def n = column[BigDecimal]("n", O.SqlType("decimal(9, 2)"))"""
+    gen.generateDefsForColumn("n", "BigDecimal").head shouldBe """def n = column[BigDecimal]("n", O.SqlType("decimal(9, 2)"))"""
 
-    gen.generateColumnDefs("on", "Option[BigDecimal]")(0) shouldBe """def on = column[Option[BigDecimal]]("on", O.SqlType("decimal(9, 2)"))"""
+    gen.generateDefsForColumn("on", "Option[BigDecimal]").head shouldBe """def on = column[Option[BigDecimal]]("on", O.SqlType("decimal(9, 2)"))"""
 
   }
 }

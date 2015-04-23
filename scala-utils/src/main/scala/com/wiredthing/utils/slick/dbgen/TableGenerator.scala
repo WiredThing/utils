@@ -25,8 +25,10 @@ trait TableGen {
 
 object TableGenerator {
   implicit def idTypeTypeable[T](implicit tt: Typeable[T]) = new Typeable[IdType[T]] {
-    override def cast(t: Any): Option[IdType[T]] =
-      if (t.isInstanceOf[IdType[_]]) Some(t.asInstanceOf[IdType[T]]) else None
+    override def cast(t: Any): Option[IdType[T]] = t match {
+      case _: IdType[_] => Some(t.asInstanceOf[IdType[T]])
+      case _ => None
+    }
 
     override def describe: String = {
       val rowTypeName = tt.describe
@@ -59,7 +61,7 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
 
   def stripFromEnd(s: String, count: Int) = s.substring(0, s.length - count)
 
-  def generateColumnDefs(n: String, t: String): Seq[String] = {
+  def generateDefsForColumn(n: String, t: String): Seq[String] = {
     val pkOpt = if (n == "id") ", O.PrimaryKey" else ""
 
     val lengthOpt =
@@ -87,7 +89,7 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
 
   lazy val genTable: Seq[String] = {
     val colDefs = namesAndTypes.flatMap { case (n, t) =>
-      generateColumnDefs(n, t)
+      generateDefsForColumn(n, t)
     }
 
     val knownTypes = Seq("BigDecimal", "String", "Long", "Boolean", "Int", "Short", "NonBlankString", "PhoneNumber")
@@ -118,7 +120,7 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
 
     Seq(
       Seq(typeMappers: _*),
-      Seq(queryAlias(row), row.classDef + " {"),
+      Seq(queryAlias, row.classDef + " {"),
       Seq(colDefs.map(d => "    " + d): _*),
       Seq("    " + starDef, "}", tableVal)
     ).flatten
@@ -127,11 +129,8 @@ class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: Tabl
 
   lazy val tableVal = s"lazy val ${lowerCaseFirst(row.root)}Table = TableQuery[${row.tableClassName}]"
 
-  def queryAlias[T](decl: TableRow[T]) = {
-    //type NotificationQuery = Query[NotificationTable, NotificationRow, Seq]
-    val root = decl.root
-    s"type ${root}Query = Query[${root}Table, ${decl.name}, Seq]"
-  }
+  val queryAlias = s"type ${row.root}Query = Query[${row.root}Table, ${row.name}, Seq]"
+
 }
 
 
