@@ -23,7 +23,7 @@ case class TableColumn[T](n: String, ty: Typeable[T]) extends StringOps {
     case _ => None
   }
 
-  val knownTypes = Seq("BigDecimal", "String", "Long", "Boolean", "Int", "Short", "NonBlankString", "PhoneNumber")
+  val knownTypes = Seq("Byte", "BigDecimal", "String", "Long", "Boolean", "Int", "Short", "NonBlankString", "PhoneNumber")
 
   val isOptionOfKnownType: Boolean = tyName.startsWith("Option[") && !needsTypeMapper(tyName.substring(7, tyName.length - 1))
 
@@ -44,7 +44,7 @@ case class TableColumn[T](n: String, ty: Typeable[T]) extends StringOps {
     val s = decamelise(t).toLowerCase
     val memberNameIndex = s.lastIndexOf("_")
     val memberName = s.substring(memberNameIndex + 1)
-    s"implicit def ${t}Mapper: BaseColumnType[$t] = MappedColumnType.base[$t, String](_.$memberName, $t)"
+    s"implicit def ${lowerCaseFirst(t)}Mapper: BaseColumnType[$t] = MappedColumnType.base[$t, String](_.$memberName, $t)"
   }
 
   val opts = Seq(lengthOpt, pkOpt, numOpt).flatten
