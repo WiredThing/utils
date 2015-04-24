@@ -10,10 +10,10 @@ object FoldTypes {
 
   implicit def hconsStrings[H, T <: HList](implicit th: Typeable[H], ft: FoldTypes[T]): FoldTypes[H :: T] =
     new FoldTypes[H :: T] {
-      def apply() = th.describe :: ft()
+      def apply() = th :: ft()
     }
 }
 
 trait FoldTypes[L <: HList] {
-  def apply(): List[String]
+  def apply(): List[Typeable[_]]
 }

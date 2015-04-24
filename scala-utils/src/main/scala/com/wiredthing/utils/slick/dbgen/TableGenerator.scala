@@ -1,12 +1,20 @@
 package com.wiredthing.utils.slick.dbgen
 
+import com.wiredthing.utils.NonBlankString
 import com.wiredthing.utils.slick.IdType
 import shapeless._
 import shapeless.ops.hlist.ToTraversable
 import shapeless.ops.record.{Keys, Values}
 
-case class TableRow[T](implicit ty: Typeable[T]) {
+trait StringOps {
   def decamelise(s: String) = s.replaceAll("([a-z])([A-Z])", "$1_$2")
+
+  def lowerCaseFirst(s: String): String = s.substring(0, 1).toLowerCase + s.substring(1)
+
+  def stripFromEnd(s: String, count: Int) = s.substring(0, s.length - count)
+}
+
+case class TableRow[T](implicit ty: Typeable[T]) extends StringOps {
 
   val name = ty.describe
 
@@ -38,85 +46,45 @@ object TableGenerator {
   }
 }
 
+
+
 class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: TableRow[T])(implicit
                                                                                          lgen: LabelledGeneric.Aux[T, R],
                                                                                          keys: Keys.Aux[R, KO],
                                                                                          values: Values.Aux[R, VO],
                                                                                          fold: FoldTypes[VO],
-                                                                                         travK: ToTraversable.Aux[KO, List, KLub]) extends TableGen {
-
-
-  lazy val namesAndTypes: List[(String, String)] = {
+                                                                                         travK: ToTraversable.Aux[KO, List, KLub]) extends TableGen with StringOps {
+  lazy val namesAndTypes: List[TableColumn[_]] = {
     val names = keys().toList.asInstanceOf[List[Symbol]].map(_.name)
     val types = fold()
-    names.zip(types)
+    names.zip(types).map { case (n, t) => TableColumn(n, t) }
   }
 
-  def isStringType(t: String) = t match {
-    case "String" | "Option[String]" | "NonBlankString" | "Option[NonBlankString]" => true
-    case _ => false
-  }
 
-  def columnSQLName(n: String) = row.decamelise(n).toLowerCase
+  def generateDefsForColumn(col: TableColumn[_]): Seq[String] = {
+    val colOpts = if (col.opts.isEmpty) "" else s""", ${col.opts.mkString(", ")}"""
+    val colDef = s"""def ${col.n} = column[${col.ty.describe}]("${col.sqlName}"$colOpts)"""
 
-  def stripFromEnd(s: String, count: Int) = s.substring(0, s.length - count)
-
-  def generateDefsForColumn(n: String, t: String): Seq[String] = {
-    val pkOpt = if (n == "id") ", O.PrimaryKey" else ""
-
-    val lengthOpt =
-      if (n == "id" || n.endsWith("Id")) ", O.Length(IdType.length)"
-      else if (isStringType(t)) ", O.Length(255)"
-      else ""
-
-    val numOpt = if (t == "BigDecimal" || t == "Option[BigDecimal]") """, O.SqlType("decimal(9, 2)")""" else ""
-
-    val col = s"""def $n = column[$t]("${columnSQLName(n)}"$pkOpt$lengthOpt$numOpt)"""
-
-    if (n.endsWith("Id")) {
-      val indexRoot = stripFromEnd(columnSQLName(n), 3)
+    if (col.n.endsWith("Id")) {
+      val indexRoot = stripFromEnd(col.sqlName, 3)
       val fkSQLName = s"${row.root.toLowerCase}_${indexRoot.toLowerCase}_fk"
       val idxSQLName = s"${row.root.toLowerCase}_${indexRoot.toLowerCase}_idx"
-      val idStripped = stripFromEnd(n, 2)
+      val idStripped = stripFromEnd(col.n, 2)
       val identifierRoot = lowerCaseFirst(idStripped)
-      val fk = s"""def $identifierRoot = foreignKey("$fkSQLName", $n, ${identifierRoot + "Table"})(_.id, onDelete = ForeignKeyAction.Cascade)"""
-      val index = s"""def ${identifierRoot}Index = index("$idxSQLName", $n)"""
-      Seq(col, fk, index)
-    } else Seq(col)
+      val fk = s"""def $identifierRoot = foreignKey("$fkSQLName", ${col.n}, ${identifierRoot + "Table"})(_.id, onDelete = ForeignKeyAction.Cascade)"""
+      val index = s"""def ${identifierRoot}Index = index("$idxSQLName", ${col.n})"""
+      Seq(colDef, fk, index)
+    } else Seq(colDef)
   }
 
-  def lowerCaseFirst(s: String): String = s.substring(0, 1).toLowerCase + s.substring(1)
 
   lazy val genTable: Seq[String] = {
-    val colDefs = namesAndTypes.flatMap { case (n, t) =>
-      generateDefsForColumn(n, t)
-    }
+    val colDefs = namesAndTypes.flatMap(generateDefsForColumn)
 
-    val knownTypes = Seq("BigDecimal", "String", "Long", "Boolean", "Int", "Short", "NonBlankString", "PhoneNumber")
 
-    def isOptionOfKnownType(t: String): Boolean = t.startsWith("Option[") && !needsTypeMapper(t.substring(7, t.length - 1))
+    val typeMappers = namesAndTypes.filter(_.needsTypeMapper).map(_.typeMapper)
 
-    def isIdType(t: String): Boolean = t.endsWith("Id") || t.startsWith("IdType[")
-
-    def needsTypeMapper(t: String): Boolean = !(knownTypes.contains(t) || isOptionOfKnownType(t) || isIdType(t))
-
-    /*
-    * Relies on a conversion that the member name of a wrapper type is the same as the last
-    * part of the type name. E.g. SenderKey(key:String) or SMSProviderName(name:String)
-    * TODO: Only create type mappers for classes with a single member
-    * TODO: Use type information to extract the name of the member
-     */
-    def typeMapper(ty: String) = {
-      val t = ty.replace("Option[", "").replace("]", "")
-      val s = row.decamelise(t).toLowerCase
-      val memberNameIndex = s.lastIndexOf("_")
-      val memberName = s.substring(memberNameIndex + 1)
-      s"implicit def ${t}Mapper: BaseColumnType[$t] = MappedColumnType.base[$t, String](_.$memberName, $t)"
-    }
-
-    val typeMappers = namesAndTypes.map(_._2).filter(t => needsTypeMapper(t)).map(typeMapper)
-
-    val starDef = s"def * = (${namesAndTypes.map(_._1).mkString(", ")}) <> (${row.name}.tupled, ${row.name}.unapply)"
+    val starDef = s"def * = (${namesAndTypes.map(_.n).mkString(", ")}) <> (${row.name}.tupled, ${row.name}.unapply)"
 
     Seq(
       Seq(typeMappers: _*),
