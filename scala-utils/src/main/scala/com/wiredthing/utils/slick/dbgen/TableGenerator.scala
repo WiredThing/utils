@@ -18,7 +18,7 @@ case class TableRow[T](implicit ty: Typeable[T]) extends StringOps {
 
   val name = ty.describe
 
-  val root = name.substring(0, name.length - 3)
+  val root = stripFromEnd(name, 3)
 
   val tableSQLName = decamelise(root).toUpperCase
 
@@ -31,7 +31,7 @@ trait TableGen {
   def genTable(): Seq[String]
 }
 
-object TableGenerator {
+object TableGenerator extends StringOps {
   implicit def idTypeTypeable[T](implicit tt: Typeable[T]) = new Typeable[IdType[T]] {
     override def cast(t: Any): Option[IdType[T]] = t match {
       case _: IdType[_] => Some(t.asInstanceOf[IdType[T]])
@@ -40,12 +40,11 @@ object TableGenerator {
 
     override def describe: String = {
       val rowTypeName = tt.describe
-      if (rowTypeName.endsWith("Row")) rowTypeName.substring(0, rowTypeName.length - 3) + "Id"
+      if (rowTypeName.endsWith("Row")) stripFromEnd(rowTypeName, 3) + "Id"
       else s"IdType[${tt.describe}]"
     }
   }
 }
-
 
 
 class TableGenerator[T, R <: HList, KO <: HList, K, KLub, VO <: HList](row: TableRow[T])(implicit
