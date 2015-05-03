@@ -9,6 +9,12 @@ jdk:
 notifications:
   slack:
     secure: ddWr5SfQnESBMmY5B7adoiByvybbM3VwPsx5pX90oGrfI5Ttm2Mdkgva+9U+H7R3WHUBZpTwzFtCngxJA00xQlqOz2gBP13aegKcC9AJ+xEXLOKm/rUtm+ajcW5ZcARYI5QRQv/VJw5CwOwrtxYBfE9eLN4x9rZ+xwfmEaM1/60=
+	webhooks:
+	    urls:
+	      - https://webhooks.gitter.im/e/594eb7b7f47c0f81753e
+	    on_success: change  # options: [always|never|change] default: always
+	    on_failure: always  # options: [always|never|change] default: always
+	    on_start: false     # default: false
 
 branches:
   only:
