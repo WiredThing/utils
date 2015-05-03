@@ -33,19 +33,19 @@ object BasicAuthAction
 trait BasicAuthExtraction {
   val Pattern = "Basic (.*)".r
 
-  def extractBase64Auth(auth: String): \/[String, String] = auth match {
+  def extractBase64Auth(auth: String): String \/ String = auth match {
     case Pattern(s) => \/-(s)
     case _ => -\/(s"Auth string is malformed: '$auth'")
   }
 
-  def decodeBase64(base64: String): \/[String, String] =
+  def decodeBase64(base64: String): String \/ String =
     base64.fromBase64.map(\/-(_)).getOrElse(-\/("Base64 string is malformed"))
 
   object Nbs {
     def unapply(s: String): Option[NonBlankString] = s.toNbs
   }
 
-  def extractBasicAuth(s: String): \/[String, BasicAuth] = {
+  def extractBasicAuth(s: String): String \/ BasicAuth = {
     // Conveniently, splitAt with a negative index will return a pair with the first element empty and
     // the second element holding the original string. E.g. "foo".splitAt(0) = ("", "foo"), so
     // this code will give a blank username error if the string does not contain a ':'
@@ -57,13 +57,13 @@ trait BasicAuthExtraction {
     }
   }
 
-  def decodeBasicAuth(auth: String): \/[String, BasicAuth] = for {
+  def decodeBasicAuth(auth: String): String \/ BasicAuth = for {
     b64 <- extractBase64Auth(auth)
     decoded <- decodeBase64(b64)
     auth <- extractBasicAuth(decoded)
   } yield auth
 
-  def extractBasicAuth(request: Request[_]): \/[String, BasicAuth] =
+  def extractBasicAuth(request: Request[_]): String \/ BasicAuth =
     request.headers.get("Authorization")
       .map(decodeBasicAuth)
       .getOrElse(-\/("No Authorization header found in request"))
