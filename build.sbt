@@ -22,11 +22,11 @@ scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-language:reflec
 
 resolvers in ThisBuild += "WiredThing Internal Forks Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-forked-local"
 
-publishTo := {
+publishTo  := {
   if (isSnapshot.value)
-    Some("WiredThing Internal Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-local")
+    Some("WiredThing Public Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-public")
   else
-    Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
+    Some("WiredThing Public Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-public")
 }
 
 credentials in ThisBuild += Credentials(Path.userHome / ".ivy2" / ".credentials")

@@ -2,11 +2,11 @@ name := "scala-utils-play"
 
 version := IO.read(baseDirectory.value / ".." / "scala-utils" / "version").trim()
 
-publishTo := {
+publishTo  := {
   if (isSnapshot.value)
-    Some("WiredThing Internal Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-local")
+    Some("WiredThing Public Snapshots Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-snapshots-public")
   else
-    Some("WiredThing Internal Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-local")
+    Some("WiredThing Public Libraries Repository" at "https://wiredthing.artifactoryonline.com/wiredthing/libs-releases-public")
 }
 
 libraryDependencies ++= Seq(
