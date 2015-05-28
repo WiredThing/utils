@@ -13,6 +13,6 @@ resolvers in ThisBuild += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.2",
-  "com.chuusai" %% "shapeless" % "2.2.0-RC5",
+  "com.chuusai" %% "shapeless" % "2.2.0",
   "com.typesafe.akka" %% "akka-actor" % "2.3.7"
 )
