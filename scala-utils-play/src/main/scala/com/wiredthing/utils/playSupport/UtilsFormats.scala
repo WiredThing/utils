@@ -2,13 +2,24 @@ package com.wiredthing.utils.playSupport
 
 import com.wiredthing.utils.NonBlankString._
 import com.wiredthing.utils.slick.IdType
-import com.wiredthing.utils.{NonBlankString, PhoneNumber}
+import com.wiredthing.utils.{DateMillis, NonBlankString, PhoneNumber}
 import play.api.libs.json._
 
 import scalaz.Scalaz._
 import scalaz._
 
 trait UtilsFormats {
+
+  implicit def dateMillisFormat = new Format[DateMillis] {
+    override def reads(json: JsValue): JsResult[DateMillis] = json match {
+      case JsNumber(n)  if(n.isWhole()) => JsSuccess(DateMillis.toDateMillis(n.toLong))
+      case js => JsError(s"Expected a Whole Number but got $js")
+    }
+
+    override def writes(o: DateMillis): JsValue = JsNumber(BigDecimal(o.milliseconds))
+  }
+
+
   implicit val nonBlankStringFormat = new Format[NonBlankString] {
     override def reads(json: JsValue): JsResult[NonBlankString] = json match {
       case JsString(s) => s.toNbs.map(JsSuccess(_)).getOrElse(JsError(s"Expected non-empty string"))
